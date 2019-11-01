@@ -19,36 +19,28 @@ func defaultHandler(c *gin.Context) {
 	})
 }
 
+// PumpRequest represents pump request
+type PumpRequest struct {
+	Subscription string `json:"subscription"`
+	Table        string `json:"table"`
+	MaxMessages  int    `json:"max_messages"`
+	MaxSeconds   int    `json:"max_seconds"`
+}
+
 func pumpHandler(c *gin.Context) {
 
-	subArg := c.Param("sub")
-	logger.Printf("sub == %s", subArg)
-	if subArg == "" {
-		logger.Println("Null subscription parameter")
+	var req PumpRequest
+	err := c.BindJSON(&req)
+	if err != nil {
+		logger.Printf("error binding request: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Null subscription parameter",
+			"message": "Invalid request format",
 			"status":  "BadRequest",
 		})
 		return
 	}
 
-	tableArg := c.Param("table")
-	logger.Printf("table == %s", tableArg)
-	if tableArg == "" {
-		logger.Println("Null table parameter")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Null table parameter",
-			"status":  "BadRequest",
-		})
-		return
-	}
-
-	request := &PumpRequest{
-		Subscription: subArg,
-		Table:        tableArg,
-	}
-
-	result, err := pump(request)
+	result, err := pump(&req)
 	if err != nil {
 		logger.Printf("Error on pump exec: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -57,6 +49,8 @@ func pumpHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	logger.Printf("pump result: %v", result)
 
 	c.JSON(http.StatusOK, result)
 }

@@ -1,6 +1,15 @@
-# gorunstarter
+# pubsub-to-bigquery-pump
 
 Simple [Cloud Run](https://cloud.google.com/run/) starter project for `go` meant to be used as a GitHub repository template to speed up new Cloud Run service development by removing the need to re-create the common "boilerplate" code and simplifying common steps.
+
+## Data
+
+Use https://github.com/mchmarny/pubsub-event-maker
+
+```shell
+bin/eventmaker --topic=pump --sources=1 --metric=mockedevents --freq=1s
+```
+
 
 ## Audience
 

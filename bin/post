@@ -1,0 +1,5 @@
+#!/bin/bash
+
+curl -H "Content-Type: application/json" \
+    -d '{"subscription":"pump-sub", "table":"pump", "max_messages":3, "max_seconds":10}' \
+    -X POST http://localhost:8080/v1/pump
