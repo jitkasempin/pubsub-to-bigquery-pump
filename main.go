@@ -1,33 +1,43 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/mchmarny/gcputil/env"
+)
+
+var (
+	logger  = log.New(os.Stdout, "", 0)
+	port    = env.MustGetEnvVar("PORT", "8080")
+	release = env.MustGetEnvVar("RELEASE", "v0.0.1-manual")
 )
 
 func main() {
 
-	log.Print("Hello service started")
+	gin.SetMode(gin.ReleaseMode)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Print("Hello service invoked")
-		message := os.Getenv("MESSAGE")
-		fmt.Fprintf(w, "%s\n", message)
-	})
+	// router
+	r := gin.New()
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
 
-	// Set HTTP listening port
-	// https://cloud.google.com/run/docs/reference/container-contract#port
-	httpPort := os.Getenv("PORT")
-	if httpPort == "" {
-		httpPort = "8080"
+	// simple routes
+	r.GET("/", defaultHandler)
+	r.GET("/health", healthHandler)
+
+	// api
+	v1 := r.Group("/v1")
+	{
+		v1.GET("/subscription/:sub/table/:table", pumpHandler)
 	}
 
-	hostPost := net.JoinHostPort("0.0.0.0", httpPort)
-
-	if err := http.ListenAndServe(hostPost, nil); err != nil {
-		log.Fatal(err)
+	// server
+	hostPort := net.JoinHostPort("0.0.0.0", port)
+	logger.Printf("Server starting: %s \n", hostPort)
+	if err := r.Run(hostPort); err != nil {
+		logger.Fatal(err)
 	}
 }

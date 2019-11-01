@@ -1,3 +1,8 @@
-module github.com/mchmarny/gorunstarter
+module github.com/mchmarny/pubsub-to-bigquery-pump
 
-go 1.12
+go 1.13
+
+require (
+	github.com/gin-gonic/gin v1.4.0
+	github.com/mchmarny/gcputil v0.2.1
+)
