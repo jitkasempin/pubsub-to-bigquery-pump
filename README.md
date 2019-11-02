@@ -45,6 +45,14 @@ bin/create-service-account
 bin/deploy-cloud-run-service
 ```
 
+## Metrics
+
+Following custom metrics are being recorded in Stackdriver for each job.
+
+* `invocation` - number of times the pump service was invoked
+* `messages` - number of messages processed for each job invocation
+* `duration` - total duration (in seconds) of each job invocation
+
 ## Cleanup
 
 To cleanup all resources created by this sample execute

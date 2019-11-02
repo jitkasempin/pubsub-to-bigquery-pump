@@ -8,6 +8,7 @@ cloud.google.com/go/internal/fields
 cloud.google.com/go/internal/optional
 cloud.google.com/go/internal/trace
 cloud.google.com/go/internal/version
+cloud.google.com/go/monitoring/apiv3
 # cloud.google.com/go/bigquery v1.2.0
 cloud.google.com/go/bigquery
 # cloud.google.com/go/pubsub v1.0.1
@@ -35,7 +36,9 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/empty
+github.com/golang/protobuf/ptypes/struct
 github.com/golang/protobuf/ptypes/timestamp
+github.com/golang/protobuf/ptypes/wrappers
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
 # github.com/googleapis/gax-go/v2 v2.0.5
@@ -53,11 +56,14 @@ github.com/mattn/go-isatty
 # github.com/mchmarny/gcputil v0.2.1
 github.com/mchmarny/gcputil/env
 github.com/mchmarny/gcputil/meta
+github.com/mchmarny/gcputil/metric
 github.com/mchmarny/gcputil/project
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
 # github.com/ugorji/go v1.1.4
 github.com/ugorji/go/codec
 # go.opencensus.io v0.22.0
@@ -156,8 +162,14 @@ google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/socket
 google.golang.org/appengine/urlfetch
 # google.golang.org/genproto v0.0.0-20191028173616-919d9bdd9fe6
+google.golang.org/genproto/googleapis/api
 google.golang.org/genproto/googleapis/api/annotations
+google.golang.org/genproto/googleapis/api/distribution
+google.golang.org/genproto/googleapis/api/label
+google.golang.org/genproto/googleapis/api/metric
+google.golang.org/genproto/googleapis/api/monitoredres
 google.golang.org/genproto/googleapis/iam/v1
+google.golang.org/genproto/googleapis/monitoring/v3
 google.golang.org/genproto/googleapis/pubsub/v1
 google.golang.org/genproto/googleapis/rpc/code
 google.golang.org/genproto/googleapis/rpc/status

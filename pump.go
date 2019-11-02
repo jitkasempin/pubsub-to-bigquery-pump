@@ -8,6 +8,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/mchmarny/gcputil/metric"
+)
+
+const (
+	invocationMetric = "invocation"
+	messagesMetric   = "messages"
+	durationMetric   = "duration"
 )
 
 // PumpResult represents the result of pump process
@@ -70,7 +77,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 	}()
 
 	// start pulling messages
-	err = sub.Receive(inCtx, func(ctx context.Context, msg *pubsub.Message) {
+	receiveErr := sub.Receive(inCtx, func(ctx context.Context, msg *pubsub.Message) {
 
 		lastMessage = time.Now()
 
@@ -80,7 +87,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 		messageCounter++
 		totalCounter++
 
-		logger.Printf("appending %d", messageCounter)
+		//logger.Printf("appending %d", messageCounter)
 		appendErr := imp.append(msg.Data)
 		if appendErr != nil {
 			logger.Printf("error on data append: %v", appendErr)
@@ -107,29 +114,59 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 			cancel()
 		}
 
-	})
+	}) // end revive
 
+	// ticker times no longer needed
+	ticker.Stop()
+
+	// receive error
+	if receiveErr != nil {
+		return nil, fmt.Errorf("pubsub subscription[%s] receive: %v",
+			in.ID, err)
+	}
+
+	// error inside of receive handler
 	if innerError != nil {
 		return nil, fmt.Errorf("pubsub receive[%s] process error: %v",
 			in.ID, innerError)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("pubsub subscription[%s] receive: %v",
-			in.ID, err)
-	}
-
+	// insert leftovers
 	if insertErr := imp.insert(ctx); insertErr != nil {
 		return nil, fmt.Errorf("bigquery insert[%s] error: %v",
 			in.ID, insertErr)
 	}
 
+	// metrics
+	m, metricErr := metric.NewClient(ctx)
+	if metricErr != nil {
+		return nil, fmt.Errorf("metric client[%s]: %v",
+			projectID, metricErr)
+	}
+
+	if metricErr = m.Publish(ctx, in.ID, invocationMetric, 1); err != nil {
+		return nil, fmt.Errorf("metric record[%s][%s]: %v",
+			in.ID, invocationMetric, metricErr)
+	}
+
+	if metricErr = m.Publish(ctx, in.ID, messagesMetric, totalCounter); err != nil {
+		return nil, fmt.Errorf("metric record[%s][%s]: %v",
+			in.ID, messagesMetric, metricErr)
+	}
+
+	totalDuration := time.Now().Sub(start).Seconds()
+	if metricErr = m.Publish(ctx, in.ID, durationMetric, totalDuration); err != nil {
+		return nil, fmt.Errorf("metric record[%s][%s]: %v",
+			in.ID, durationMetric, metricErr)
+	}
+
+	// response
 	r := &PumpResult{
 		ExecutedOn:   start,
-		Duration:     int(time.Now().Sub(start).Seconds()),
+		Duration:     int(totalDuration),
+		MessageCount: totalCounter,
 		Request:      in,
 		Release:      release,
-		MessageCount: totalCounter,
 	}
 
 	return r, nil
