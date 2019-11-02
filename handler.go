@@ -24,18 +24,18 @@ type PumpJob struct {
 	ID     string `json:"id"`
 	Source struct {
 		Subscription string `json:"subscription"`
+		MaxStall     int    `json:"max_stall"`
 	} `json:"source"`
 	Target struct {
-		Dataset string `json:"dataset"`
-		Table   string `json:"table"`
+		Dataset   string `json:"dataset"`
+		Table     string `json:"table"`
+		BatchSize int    `json:"batch_size"`
 	} `json:"target"`
-	MaxMessages int `json:"max_messages"`
-	MaxSeconds  int `json:"max_seconds"`
+	MaxDuration int `json:"max_duration"`
 }
 
 func pumpHandler(c *gin.Context) {
 
-	logger.Println("parsing message...")
 	var req PumpJob
 	err := c.BindJSON(&req)
 	if err != nil {
@@ -47,7 +47,6 @@ func pumpHandler(c *gin.Context) {
 		return
 	}
 
-	logger.Println("creating pump...")
 	result, err := pump(&req)
 	if err != nil {
 		logger.Printf("Error on pump exec: %v", err)

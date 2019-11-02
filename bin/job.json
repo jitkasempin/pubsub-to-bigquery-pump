@@ -1,12 +1,13 @@
 {
     "id": "sample-import",
     "source": {
-        "subscription": "pump-sub"
+        "subscription": "pump-sub",
+        "max_stall": 15
     },
     "target": {
         "dataset": "pump",
-        "table": "events"
+        "table": "events",
+        "batch_size": 1000
     },
-    "max_messages": 3,
-    "max_seconds": 5
+    "max_duration": 60
 }

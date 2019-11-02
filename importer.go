@@ -47,7 +47,19 @@ func (c *importClient) append(data []byte) error {
 	return nil
 }
 
+func (c *importClient) clear() {
+	var mu sync.Mutex
+	mu.Lock()
+	defer mu.Unlock()
+	c.records = make([]*simpleRecord, 0)
+}
+
 func (c *importClient) insert(ctx context.Context) error {
+	if len(c.records) == 0 {
+		logger.Println("nothing to insert")
+		return nil
+	}
+	logger.Printf("inserting %d records...", len(c.records))
 	if err := c.inserter.Put(ctx, c.records); err != nil {
 		logger.Printf("error on put: %v", err)
 		return err
