@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# GCP metadata
+PROJECT=$(gcloud config get-value project)
+PROJECT_NUM=$(gcloud projects describe ${PROJECT} --format="value(projectNumber)")
+
+# schedule service roles
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:service-${PROJECT_NUM}@gcp-sa-cloudscheduler.iam.gserviceaccount.com" \
+    --role roles/cloudscheduler.serviceAgent
+
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:service-${PROJECT_NUM}@gcp-sa-cloudscheduler.iam.gserviceaccount.com" \
+    --role roles/run.invoker
+
+# run service account policies
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:pump-service@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/run.invoker
+
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:pump-service@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/pubsub.viewer
+
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:pump-service@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/bigquery.dataOwner
+
+gcloud projects add-iam-policy-binding $PROJECT \
+	--member "serviceAccount:pump-service@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/logging.logWriter
+
+gcloud projects add-iam-policy-binding $PROJECT \
+	--member "serviceAccount:pump-service@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/cloudtrace.agent
+
+gcloud projects add-iam-policy-binding $PROJECT \
+	--member "serviceAccount:pump-service@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/monitoring.metricWriter

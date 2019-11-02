@@ -1,0 +1,17 @@
+#!/bin/bash
+
+SERVICE_NAME=pubsub-to-bigquery-pump
+PROJECT=$(gcloud config get-value project)
+SERVICE_URL=$(gcloud beta run services describe ${SERVICE_NAME} \
+    --region us-central1 --format="value(status.domain)")
+
+gcloud beta scheduler jobs create http "${SERVICE_NAME}-schedule" \
+    --http-method POST \
+    --schedule "every 30 mins" \
+    --uri "${SERVICE_URL}/v1/pump" \
+    --message-body-from-file bin/job.json \
+    --oidc-service-account-email "pump-service@${PROJECT}.iam.gserviceaccount.com" \
+    --oidc-token-audience "${SERVICE_URL}/v1/pump"
+
+
+

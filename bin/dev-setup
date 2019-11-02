@@ -13,6 +13,12 @@ gcloud services enable --quiet \
 # PubSub
 gcloud pubsub topics create pump
 
+gcloud pubsub subscriptions create pump-sub \
+    --topic pump \
+    --ack-deadline 600 \
+    --message-retention-duration 2d \
+    --retain-acked-messages
+
 # BigQuery
 bq mk pump
 bq mk --schema source_id:string,event_id:string,event_ts:timestamp,load_1:numeric \

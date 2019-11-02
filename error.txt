@@ -1,0 +1,26 @@
+# Error on
+
+Container Sandbox Limitation: Unsupported syscall setsockopt(0x9,0x6,0x12,0xc00030d13c,0x4,0x0). Please, refer to https://gvisor.dev/c/linux/amd64/setsockopt for more information.
+
+
+{
+ insertId: "5dbdffeb000beb98b156bac4"
+ labels: {
+  instanceId: "00bf4bf02dbf554f001fe2691c5b0ea49218ee4e279e317ef254cc356fe482adf759890aaf3decc2571b00d959c41c98991582bbbd8ffa810369c23456307993051394"
+ }
+ logName: "projects/cloudylabs/logs/run.googleapis.com%2Fvarlog%2Fsystem"
+ receiveTimestamp: "2019-11-02T22:15:08.142614544Z"
+ resource: {
+  labels: {
+   configuration_name: "pubsub-to-bigquery-pump"
+   location: "us-central1"
+   project_id: "cloudylabs"
+   revision_name: "pubsub-to-bigquery-pump-xql55"
+   service_name: "pubsub-to-bigquery-pump"
+  }
+  type: "cloud_run_revision"
+ }
+ severity: "DEBUG"
+ textPayload: "Container Sandbox Limitation: Unsupported syscall setsockopt(0x9,0x6,0x12,0xc00030d13c,0x4,0x0). Please, refer to https://gvisor.dev/c/linux/amd64/setsockopt for more information."
+ timestamp: "2019-11-02T22:15:07.780907169Z"
+}

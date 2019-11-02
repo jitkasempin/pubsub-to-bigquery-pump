@@ -3,9 +3,11 @@
 # GCP project name
 PROJECT=$(gcloud config get-value project)
 
-gcloud beta run services delete gorunstarter \
+gcloud beta run services delete pubsub-to-bigquery-pump \
     --platform managed \
     --region us-central1
 
+gcloud beta scheduler jobs delete pubsub-to-bigquery-pump-schedule
+
 gcloud iam service-accounts delete \
-    gorunstarter-sa@${PROJECT}.iam.gserviceaccount.com
+    pump-service@${PROJECT}.iam.gserviceaccount.com

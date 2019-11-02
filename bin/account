@@ -1,15 +1,6 @@
 #!/bin/bash
 
-# GCP project name
-PROJECT=$(gcloud config get-value project)
+# accounts
+gcloud iam service-accounts create pump-service \
+	--display-name "pubsub-to-bigquery-pump service account"
 
-gcloud iam service-accounts create gorunstarter-sa \
-	--display-name "Go Run Starter Service Account"
-
-gcloud projects add-iam-policy-binding $PROJECT \
-	--member serviceAccount:gorunstarter-sa@${PROJECT}.iam.gserviceaccount.com \
-	--role roles/logging.logWriter
-
-gcloud projects add-iam-policy-binding $PROJECT \
-	--member serviceAccount:gorunstarter-sa@${PROJECT}.iam.gserviceaccount.com \
-	--role roles/cloudtrace.agent

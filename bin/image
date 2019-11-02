@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # GCP project name
-PROJECT=$(gcloud config get-value project)
+# PROJECT=$(gcloud config get-value project)
 
 # modules
 go mod tidy
 go mod vendor
 
 gcloud builds submit \
-    --tag gcr.io/$PROJECT/pubsub-to-bigquery-pump:0.0.1 .
+    --project cloudylabs-public \
+    --tag gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.0.2 \
+    .
