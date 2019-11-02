@@ -9,13 +9,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func getImportClient(ctx context.Context, projectID, datasetID, tableID string) (c *importClient, err error) {
+func newImportClient(ctx context.Context, target *JobTarget) (c *importClient, err error) {
 	client, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	inserter := client.Dataset(datasetID).Table(tableID).Inserter()
-	inserter.IgnoreUnknownValues = true
+	inserter := client.Dataset(target.Dataset).Table(target.Table).Inserter()
+	inserter.IgnoreUnknownValues = target.IgnoreUnknowns
 
 	return &importClient{
 		inserter: inserter,

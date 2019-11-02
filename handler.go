@@ -26,12 +26,16 @@ type PumpJob struct {
 		Subscription string `json:"subscription"`
 		MaxStall     int    `json:"max_stall"`
 	} `json:"source"`
-	Target struct {
-		Dataset   string `json:"dataset"`
-		Table     string `json:"table"`
-		BatchSize int    `json:"batch_size"`
-	} `json:"target"`
-	MaxDuration int `json:"max_duration"`
+	Target      *JobTarget `json:"target"`
+	MaxDuration int        `json:"max_duration"`
+}
+
+// JobTarget represents the target configuration
+type JobTarget struct {
+	Dataset        string `json:"dataset"`
+	Table          string `json:"table"`
+	BatchSize      int    `json:"batch_size"`
+	IgnoreUnknowns bool   `json:"ignore_unknowns"`
 }
 
 func pumpHandler(c *gin.Context) {

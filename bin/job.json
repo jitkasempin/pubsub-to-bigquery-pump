@@ -7,7 +7,8 @@
     "target": {
         "dataset": "pump",
         "table": "events",
-        "batch_size": 1000
+        "batch_size": 1000,
+        "ignore_unknowns": true
     },
     "max_duration": 60
 }
