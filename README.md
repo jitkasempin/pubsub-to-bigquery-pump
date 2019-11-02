@@ -2,7 +2,7 @@
 
 > Warning, this service will error on execution due to Container Sandbox Limitation: Unsupported syscall setsockopt. Investigating alternative approach
 
-[Cloud Run](https://cloud.google.com/run/) based service to drain JSON-formated messages from PubSub topic into BigQuery table.
+[Cloud Run](https://cloud.google.com/run/) based service to drain JSON-formatted messages from PubSub topic into BigQuery table.
 
 ## Why
 
