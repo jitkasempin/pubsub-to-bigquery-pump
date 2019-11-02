@@ -7,12 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mchmarny/gcputil/env"
+	"github.com/mchmarny/gcputil/project"
 )
 
 var (
-	logger  = log.New(os.Stdout, "[PUMP] ", 0)
-	port    = env.MustGetEnvVar("PORT", "8080")
-	release = env.MustGetEnvVar("RELEASE", "v0.0.1-manual")
+	logger    = log.New(os.Stdout, "[PUMP] ", 0)
+	port      = env.MustGetEnvVar("PORT", "8080")
+	release   = env.MustGetEnvVar("RELEASE", "v0.0.1-manual")
+	projectID = project.GetIDOrFail()
 )
 
 func main() {

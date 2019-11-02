@@ -15,5 +15,5 @@ gcloud pubsub topics create pump
 
 # BigQuery
 bq mk pump
-bq mk --schema source_id:string,event_id:string,event_ts:timestamp,random_metric:numeric \
+bq mk --schema source_id:string,event_id:string,event_ts:timestamp,load_1:numeric \
       -t "pump.events"

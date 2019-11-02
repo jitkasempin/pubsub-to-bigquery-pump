@@ -19,17 +19,24 @@ func defaultHandler(c *gin.Context) {
 	})
 }
 
-// PumpRequest represents pump request
-type PumpRequest struct {
-	Subscription string `json:"subscription"`
-	Table        string `json:"table"`
-	MaxMessages  int    `json:"max_messages"`
-	MaxSeconds   int    `json:"max_seconds"`
+// PumpJob represents pump request
+type PumpJob struct {
+	ID     string `json:"id"`
+	Source struct {
+		Subscription string `json:"subscription"`
+	} `json:"source"`
+	Target struct {
+		Dataset string `json:"dataset"`
+		Table   string `json:"table"`
+	} `json:"target"`
+	MaxMessages int `json:"max_messages"`
+	MaxSeconds  int `json:"max_seconds"`
 }
 
 func pumpHandler(c *gin.Context) {
 
-	var req PumpRequest
+	logger.Println("parsing message...")
+	var req PumpJob
 	err := c.BindJSON(&req)
 	if err != nil {
 		logger.Printf("error binding request: %v", err)
@@ -40,6 +47,7 @@ func pumpHandler(c *gin.Context) {
 		return
 	}
 
+	logger.Println("creating pump...")
 	result, err := pump(&req)
 	if err != nil {
 		logger.Printf("Error on pump exec: %v", err)
@@ -49,7 +57,6 @@ func pumpHandler(c *gin.Context) {
 		})
 		return
 	}
-
 	logger.Printf("pump result: %v", result)
 
 	c.JSON(http.StatusOK, result)

@@ -8,23 +8,18 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/mchmarny/gcputil/project"
-)
-
-var (
-	projectID = project.GetIDOrFail()
 )
 
 // PumpResult represents the result of pump process
 type PumpResult struct {
-	ExecutedOn   time.Time    `json:"executed_on"`
-	Duration     int          `json:"duration"`
-	Release      string       `json:"release"`
-	MessageCount int          `json:"message_count"`
-	Request      *PumpRequest `json:"request"`
+	ExecutedOn   time.Time `json:"executed_on"`
+	Duration     int       `json:"duration"`
+	Release      string    `json:"release"`
+	Request      *PumpJob  `json:"request"`
+	MessageCount int       `json:"message_count"`
 }
 
-func pump(in *PumpRequest) (out *PumpResult, err error) {
+func pump(in *PumpJob) (out *PumpResult, err error) {
 
 	if in == nil {
 		return nil, errors.New("nil PumpRequest")
@@ -33,55 +28,81 @@ func pump(in *PumpRequest) (out *PumpResult, err error) {
 	ctx := context.Background()
 	start := time.Now()
 
+	logger.Printf("creating pubsub client[%s]", projectID)
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("pubsub client[%s]: %v",
 			projectID, err)
 	}
 
-	sub := client.Subscription(in.Subscription)
+	logger.Printf("creating importer client[%s.%s.%s]",
+		projectID, in.Target.Dataset, in.Target.Table)
+	imp, err := getImportClient(ctx, projectID, in.Target.Dataset, in.Target.Table)
+	if err != nil {
+		return nil, fmt.Errorf("bigquery client[%s.%s]: %v",
+			in.Target.Dataset, in.Target.Table, err)
+	}
+
+	logger.Printf("creating pubsub subscription[%s]", in.Source.Subscription)
+	sub := client.Subscription(in.Source.Subscription)
 	inCtx, cancel := context.WithCancel(ctx)
 	var mu sync.Mutex
-	messages := make([]*pubsub.Message, 0)
+	messageCounter := 0
+	var receiveErr error
 	err = sub.Receive(inCtx, func(ctx context.Context, msg *pubsub.Message) {
 
 		mu.Lock()
 		defer mu.Unlock()
 
-		// spool messages into array but don't msg.Ack()
-		messages = append(messages, msg)
+		logger.Printf("appending: %q\n", msg.Data)
+		appendErr := imp.append(msg.Data)
+		if appendErr != nil {
+			logger.Printf("error on data append: %v", appendErr)
+			receiveErr = appendErr
+			return
+		}
+
+		logger.Printf("acknowledging: %s\n", msg.ID)
 		msg.Ack()
 
 		// count
-		logger.Printf("messages spooled: %d\n", len(messages))
-		if len(messages) == in.MaxMessages {
+		messageCounter++
+		if messageCounter == in.MaxMessages {
+			logger.Println("message count exceeded")
 			cancel()
 		}
 
 		// duration
 		elapsed := int(time.Now().Sub(start).Seconds())
-		logger.Printf("seconds: %d\n", elapsed)
 		if elapsed > in.MaxSeconds {
+			logger.Println("time elapsed")
 			cancel()
 		}
 
 	})
 
-	logger.Println("done receiving")
-
-	if err != nil {
-		return nil, fmt.Errorf("pubsub subscription[%s]: %v",
-			in.Subscription, err)
+	if receiveErr != nil {
+		return nil, fmt.Errorf("pubsub receive[%s] process error: %v",
+			in.ID, receiveErr)
 	}
 
-	//TODO: build batch and save to BQ
+	if err != nil {
+		return nil, fmt.Errorf("pubsub subscription[%s] receive: %v",
+			in.ID, err)
+	}
+
+	logger.Println("inserting...")
+	if insertErr := imp.insert(ctx); insertErr != nil {
+		return nil, fmt.Errorf("bigquery insert[%s] error: %v",
+			in.ID, insertErr)
+	}
 
 	r := &PumpResult{
 		ExecutedOn:   start,
 		Duration:     int(time.Now().Sub(start).Seconds()),
 		Request:      in,
 		Release:      release,
-		MessageCount: len(messages),
+		MessageCount: messageCounter,
 	}
 
 	return r, nil
