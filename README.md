@@ -1,7 +1,5 @@
 # pubsub-to-bigquery-pump
 
-> Warning, this service will error on execution due to Container Sandbox Limitation: Unsupported syscall setsockopt. Investigating alternative approach
-
 [Cloud Run](https://cloud.google.com/run/) based service to drain JSON-formatted messages from PubSub topic into BigQuery table.
 
 ## Why
@@ -47,7 +45,7 @@ bin/account
 Now that we have the service account created, we can assign it the necessary policies:
 
 * `run.invoker` - required to execute Cloud Run service
-* `pubsub.viewer` - required to list and read from Cloud PubSub subscription
+* `pubsub.editor` - required to list and read from Cloud PubSub subscription
 * `bigquery.dataOwner` - required to write/read to BigQuery table
 * `logging.logWriter` - required for Stackdriver logging
 * `cloudtrace.agent` - required for Stackdriver tracing
@@ -63,7 +61,7 @@ bin/policy
 
 Now that IAM is configured, we can deploy Cloud Run service
 
-> By default we will deploy a prebuilt image (`gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.0.2`). If you want to build this service from source, see [Building Image](#building-image) for instructions
+> By default we will deploy a prebuilt image (`gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.0.3`). If you want to build this service from source, see [Building Image](#building-image) for instructions
 
 ```shell
 bin/deploy
