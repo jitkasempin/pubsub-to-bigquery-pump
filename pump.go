@@ -122,7 +122,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 	// receive error
 	if receiveErr != nil {
 		return nil, fmt.Errorf("pubsub subscription[%s] receive: %v",
-			in.ID, err)
+			in.ID, receiveErr)
 	}
 
 	// error inside of receive handler

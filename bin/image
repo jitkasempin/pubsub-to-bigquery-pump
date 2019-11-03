@@ -9,5 +9,5 @@ go mod vendor
 
 gcloud builds submit \
     --project cloudylabs-public \
-    --tag gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.0.2 \
+    --tag gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.0.3s \
     .
