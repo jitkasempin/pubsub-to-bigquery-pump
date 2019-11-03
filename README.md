@@ -73,6 +73,8 @@ A couple of worth to note deployment options. First, we deployed the `pubsub-to-
 
 With our Cloud Run service deployed, we can now configure Cloud Schedule to execute that service.
 
+> Assumptions: you BigQuery schema matches the names of JSON message fields. Column names are not case sensitive and the types conversion is best effort.
+
 ```shell
 bin/schedule
 ```
