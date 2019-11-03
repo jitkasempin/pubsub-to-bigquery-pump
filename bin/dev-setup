@@ -2,11 +2,12 @@
 
 # PubSub
 gcloud pubsub topics create pump
+
+# ack-deadline == max cloud run service exec time
 gcloud pubsub subscriptions create pump-sub \
     --topic pump \
-    --ack-deadline 600 \
-    --message-retention-duration 2d \
-    --retain-acked-messages
+    --ack-deadline 900 \
+    --message-retention-duration 2d
 
 # BigQuery
 bq mk pump

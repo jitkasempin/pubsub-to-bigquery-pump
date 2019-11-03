@@ -1,8 +1,8 @@
 # pubsub-to-bigquery-pump
 
-[Cloud Run](https://cloud.google.com/run/) based service to drain JSON-formatted messages from PubSub topic into BigQuery table.
+Load JSON-formatted messages from PubSub topic into BigQuery table. By combining thus [Cloud Run](https://cloud.google.com/run/) service and Cloud Scheduler configure multiple "import job" at specific interval.
 
-## Why
+## Why Custom Service
 
 Google Cloud has an easy approach to draining your PubSub messages into BigQuery. Using provided template you create a job that will consistently and reliably stream your messages into BigQuery.
 
@@ -18,7 +18,7 @@ The one downside of that approach is that, behind the scene, Dataflow deploys VM
 
 However, if your message flow is in-frequent or don't mind messages being written in scheduled batches, you can avoid that cost by using this service.
 
-## Pre-requirements
+## Prerequisites
 
 If you don't have one already, start by creating new project and configuring [Google Cloud SDK](https://cloud.google.com/sdk/docs/). Similarly, if you have not done so already, you will have [set up Cloud Run](https://cloud.google.com/run/docs/setup).
 
@@ -61,7 +61,7 @@ bin/policy
 
 Now that IAM is configured, we can deploy Cloud Run service
 
-> By default we will deploy a prebuilt image (`gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.0.3`). If you want to build this service from source, see [Building Image](#building-image) for instructions
+> By default we will deploy a prebuilt image (`gcr.io/cloudylabs-public/pubsub-to-bigquery-pump`). If you want to build this service from source, see [Building Image](#building-image) for instructions
 
 ```shell
 bin/deploy
@@ -81,18 +81,18 @@ The created schedule will execute every 30 min with following content
 
 ```json
 {
-    "id": "sample",
+    "id": "my-import-job",
     "source": {
-        "subscription": "pump-sub",
+        "subscription": "my-iot-topic",
         "max_stall": 15
     },
     "target": {
-        "dataset": "pump",
+        "dataset": "iot",
         "table": "events",
         "batch_size": 1000,
         "ignore_unknowns": true
     },
-    "max_duration": 60
+    "max_duration": 600
 }
 ```
 
@@ -113,9 +113,9 @@ You can create multiple schedules each with their own configuration:
 
 Following custom metrics are being recorded in Stackdriver for each service invocation.
 
-* `invocation` - number of times the pump service was invoked
-* `messages` - number of messages processed for each job invocation
-* `duration` - total duration (in seconds) of each job invocation
+* `custom/metric/invocation` - number of times the pump service was invoked
+* `custom/metric/message` - number of messages processed for each job invocation
+* `custom/metric/duration` - total duration (in seconds) of each job invocation
 
 ## Demo
 
@@ -134,9 +134,8 @@ Then create a PubSub subscription named `pump-sub`
 ```shell
 gcloud pubsub subscriptions create pump-sub \
     --topic pump \
-    --ack-deadline 600 \
-    --message-retention-duration 1d \
-    --retain-acked-messages
+    --ack-deadline 900 \
+    --message-retention-duration 1d
 ```
 
 ### Setup BigQuery
@@ -165,7 +164,7 @@ Clone the [PubSub Event Maker](https://github.com/mchmarny/pubsub-event-maker) r
 This will mock `demo` metric messages from `3` different sources at `0.5` second frequency. The content of the submitted events will be printed out in the console like this
 
 ```shell
-[EVENT-MAKER] Publishing: {"source_id":"device-2","event_id":"eid-bdcbb0a8-bb2f-4a4b-8325-eb3ac691348f","event_ts":"2019-11-03T14:50:50.485636Z","label":"demo","mem_used":90.82845052083334,"cpu_used":58.66336633663366,"load_1":5.06,"load_5":11.92,"load_15":34.36,"random_metric":20.318687664732284}
+[EVENT-MAKER] Publishing: {"source_id":"device-2","event_id":"eid-eb3ac691348f","event_ts":"2019-11-03T14:50:50.485636Z","label":"demo","mem_used":90.8284,"cpu_used":58.6633,"load_1":5.06,"load_5":11.92,"load_15":34.36,"random_metric":20.3186}
 ```
 
 ### Run Cloud Scheduler

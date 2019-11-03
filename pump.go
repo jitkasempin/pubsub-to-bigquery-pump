@@ -13,7 +13,7 @@ import (
 
 const (
 	invocationMetric = "invocation"
-	messagesMetric   = "messages"
+	messagesMetric   = "message"
 	durationMetric   = "duration"
 )
 

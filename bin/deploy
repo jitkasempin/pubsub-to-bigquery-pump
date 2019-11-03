@@ -6,11 +6,11 @@ SERVICE_NAME=pubsub-to-bigquery-pump
 
 gcloud beta run deploy $SERVICE_NAME \
 	--no-allow-unauthenticated \
-	--image gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.0.3 \
+	--image gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.1.1 \
 	--platform managed \
 	--timeout 15m \
 	--region us-central1 \
-	--set-env-vars "RELEASE=v0.0.3" \
+	--set-env-vars "RELEASE=v0.1.1" \
 	--service-account pump-service@${PROJECT}.iam.gserviceaccount.com
 
 
