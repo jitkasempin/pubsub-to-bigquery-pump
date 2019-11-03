@@ -4,7 +4,7 @@
 
 ## Why
 
-Google Cloud has an easy approach to draining your PubSub messages into BigQuery. Using   Dataflow and an existing template you can quickly create job that will consistently and reliably stream your messages into BigQuery.
+Google Cloud has an easy approach to draining your PubSub messages into BigQuery. Using provided template you create a job that will consistently and reliably stream your messages into BigQuery.
 
 ```shell
 gcloud dataflow jobs run $JOB_NAME --region us-west1 \
@@ -12,11 +12,11 @@ gcloud dataflow jobs run $JOB_NAME --region us-west1 \
   --parameters "inputTopic=projects/${PROJECT}/topics/${TOPIC},outputTableSpec=${PROJECT}:${DATASET}.${TABLE}"
 ```
 
-This approach solves many of the common issues related to back pressure, retries, and individual insert quota limits. If you are either dealing with a consistent stream of messages or looking for fastest way of draining your PubSub messages into BigQuery this is the best solution.
+This approach solves many of the common issues related to back pressure, retries, and individual insert quota limits. If you are either dealing with a constant stream of messages or need to drain your PubSub messages immediately into BigQuery, this is your best option.
 
-The one downside of that approach is that, behind the scene, Dataflow deploys VMs into your project. While the machine types and the number of these VMs are configurable, there will always be at least one VM. That means that whether there are messages to process or not, there always is cost related to running these VMs.
+The one downside of that approach is that, behind the scene, Dataflow deploys VMs. While the machine types and the number of VMs are configurable, there will always be at least one VM. That means that, whether there are messages to process or not, you always pay for VMs.
 
-In situation when you are dealing with an in-frequent message flow or you don't need these messages to immediately written into BigQuery table, you can avoid that cost by using this service.
+However, if your message flow is in-frequent or don't mind messages being written in scheduled batches, you can avoid that cost by using this service.
 
 ## Pre-requirements
 
@@ -24,7 +24,7 @@ If you don't have one already, start by creating new project and configuring [Go
 
 ## Usage
 
-> To keep this document short, I provide scripts that wrap the detail commands. You should review each one of these scripts for content to understand the individual commands
+> To keep this document short, I scripted longer `gcloud` commands. You should review these scripts for content and to understand the individual commands.
 
 ### Enable APIs
 
@@ -81,7 +81,7 @@ The created schedule will execute every 30 min with following content
 
 ```json
 {
-    "id": "sample-import",
+    "id": "sample",
     "source": {
         "subscription": "pump-sub",
         "max_stall": 15
@@ -96,19 +96,18 @@ The created schedule will execute every 30 min with following content
 }
 ```
 
-Schedule configuration:
+You can create multiple schedules each with their own configuration:
 
 * `id` is the unique ID for this job. Will be used in metrics to track the counts across executions
 * `source` is the PubSub configuration
-  * `subscription` is the name of already existing PubSub subscription
+  * `subscription` is the name of existing PubSub subscription
   * `max_stall` represents the maximum amount of time (seconds) the service will wait for new messages when the queue has been drained. Should be greater than 5 seconds
 * `target` is the BigQuery configuration
   * `dataset` is the name of the existing BigQuery dataset
-  * `table` is the name of the existing BigQuery table
-  * `batch_size` is the size of the insert batch, every n number of messages the service will insert batch into BigQuery
+  * `table` is the name of the existing BigQuery dataset table
+  * `batch_size` is the size of the insert batch, every n number of messages the service will insert batch into BigQuery. Should be lesser than the maximum size of [BigQuery batch insert limits](https://cloud.google.com/bigquery/quotas#load_jobs)
   * `ignore_unknowns` indicates whether the service should error when there are fields in your JSON message on PubSun that are not represented in BigQuery table
-* `max_duration` is the maximum amount of time the service should execute. The service will exit after the specified number of seconds whether there are more message or not. Should not be greater than the service `--timeout`
-
+* `max_duration` is the maximum amount of time the service should execute. The service will exit after the specified number of seconds whether there are more message or not. Should not be greater than the service `--timeout` or maximum Cloud Run service execution time (15 min)
 
 ## Metrics
 
@@ -117,6 +116,61 @@ Following custom metrics are being recorded in Stackdriver for each service invo
 * `invocation` - number of times the pump service was invoked
 * `messages` - number of messages processed for each job invocation
 * `duration` - total duration (in seconds) of each job invocation
+
+## Demo
+
+To quickly evaluate this service you can use [PubSub Event Maker](https://github.com/mchmarny/pubsub-event-maker) with the following configuration
+
+### Setup PubSub
+
+Create PubSub topic named `pump`
+
+```shell
+gcloud pubsub topics create pump
+```
+
+Then create a PubSub subscription named `pump-sub`
+
+```shell
+gcloud pubsub subscriptions create pump-sub \
+    --topic pump \
+    --ack-deadline 600 \
+    --message-retention-duration 1d \
+    --retain-acked-messages
+```
+
+### Setup BigQuery
+
+Create a BiqQuery dataset named `pump`
+
+```shell
+bq mk pump
+```
+
+Then create a BigQuery table named `events` with a simple schema
+
+```shell
+bq mk --schema source_id:string,event_id:string,event_ts:timestamp,load_1:numeric \
+      -t "pump.events"
+```
+
+### Send Data
+
+Clone the [PubSub Event Maker](https://github.com/mchmarny/pubsub-event-maker) repo or download the latest release for your OS and run it to push data to your newly created PubSub topic
+
+```shell
+./eventmaker --topic=pump --sources=3 --metric=demo --freq=0.5s
+```
+
+This will mock `demo` metric messages from `3` different sources at `0.5` second frequency. The content of the submitted events will be printed out in the console like this
+
+```shell
+[EVENT-MAKER] Publishing: {"source_id":"device-2","event_id":"eid-bdcbb0a8-bb2f-4a4b-8325-eb3ac691348f","event_ts":"2019-11-03T14:50:50.485636Z","label":"demo","mem_used":90.82845052083334,"cpu_used":58.66336633663366,"load_1":5.06,"load_5":11.92,"load_15":34.36,"random_metric":20.318687664732284}
+```
+
+### Run Cloud Scheduler
+
+To execute service now you can manually trigger the created schedule. If everything goes well your BigQuery table should have some messages.
 
 
 ## Building Image
