@@ -11,9 +11,9 @@ gcloud beta run deploy $SERVICE_NAME \
 	--timeout 15m \
 	--region $SERVICE_REGION \
 	--set-env-vars "RELEASE=v${IMAGE_VERSION}" \
-	--service-account pump-service@${PROJECT}.iam.gserviceaccount.com
+	--service-account "${SA_NAME}@${PROJECT}.iam.gserviceaccount.com"
 
 
 gcloud beta run services add-iam-policy-binding $SERVICE_NAME \
-    --member "serviceAccount:pump-service@${PROJECT}.iam.gserviceaccount.com" \
+    --member "serviceAccount:${SA_NAME}@${PROJECT}.iam.gserviceaccount.com" \
     --role roles/run.invoker

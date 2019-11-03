@@ -1,0 +1,116 @@
+#!/bin/bash
+
+SERVICE_NAME="pubsub-to-bigquery-pump2"
+SERVICE_ACCOUNT="pump-sa"
+SERVICE_REGION="us-central1"
+IMAGE_VERSION="0.1.5"
+
+# GCP metadata
+PROJECT=$(gcloud config get-value project)
+PROJECT_NUM=$(gcloud projects describe ${PROJECT} --format="value(projectNumber)")
+
+
+echo "${SERVICE_NAME} install v0.1.1"
+echo "========================================================================="
+echo ""
+
+echo "Topics:"
+gcloud pubsub topics list --format="value(name)"
+echo ""
+
+echo "Messages from which topic do you want to write to BigQuery?"
+read TOPIC_NAME
+echo ""
+
+echo "Creating subscription for $TOPIC_NAME"
+gcloud pubsub subscriptions create "${TOPIC_NAME}-pump-sub" \
+    --topic pump \
+    --labels "creator=pump" \
+    --ack-deadline 600 \
+    --message-retention-duration 2d
+echo ""
+
+echo "Creating service account $SERVICE_ACCOUNT"
+gcloud iam service-accounts create $SERVICE_ACCOUNT \
+	--display-name "pubsub-to-bigquery-pump service account" \
+    --quiet
+echo ""
+
+# schedule service roles
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:service-${PROJECT_NUM}@gcp-sa-cloudscheduler.iam.gserviceaccount.com" \
+    --role roles/cloudscheduler.serviceAgent --quiet
+
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:service-${PROJECT_NUM}@gcp-sa-cloudscheduler.iam.gserviceaccount.com" \
+    --role roles/run.invoker --quiet
+
+# run service account policies
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/run.invoker --quiet
+
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/pubsub.subscriber --quiet
+
+gcloud projects add-iam-policy-binding $PROJECT \
+    --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/bigquery.dataOwner --quiet
+
+gcloud projects add-iam-policy-binding $PROJECT \
+	--member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/logging.logWriter --quiet
+
+gcloud projects add-iam-policy-binding $PROJECT \
+	--member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/cloudtrace.agent --quiet
+
+gcloud projects add-iam-policy-binding $PROJECT \
+	--member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/monitoring.metricWriter --quiet
+
+echo "Creating service $SERVICE_NAME"
+gcloud beta run deploy $SERVICE_NAME \
+	--no-allow-unauthenticated \
+	--image "gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:${IMAGE_VERSION}" \
+	--platform managed \
+	--timeout 15m \
+	--region $SERVICE_REGION \
+	--set-env-vars "RELEASE=v${IMAGE_VERSION}" \
+	--service-account "${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com"
+
+gcloud beta run services add-iam-policy-binding $SERVICE_NAME \
+    --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
+    --role roles/run.invoker --quiet
+echo ""
+echo ""
+echo "Done"
+echo ""
+
+echo "Pulling single message from ${TOPIC_NAME}-pump-sub subscription"
+echo "(message won't be acknowladged, subscription will pull it again)"
+gcloud pubsub subscriptions pull "${TOPIC_NAME}-pump-sub" \
+    --format="value(DATA)"
+echo ""
+echo "Now, crewate BigQuery schema. You can use "
+echo "https://bigquery-json-schema-generator.com to convert the message JSON "
+echo "into BigQuery schema, then apply it using the bq CLI"
+
+
+# clenup for debugging
+echo "DEBUG - Cleanup? (ctrl+c to exit or enter to cleanup)"
+read CLENUP
+gcloud pubsub subscriptions delete "${TOPIC_NAME}-pump-sub"
+
+
+# BigQuery
+# bq mk pump
+# bq mk --schema source_id:string,event_id:string,event_ts:timestamp,load_1:numeric \
+#       -t "pump.events"
+
+# https://github.com/mchmarny/pubsub-event-maker
+
+
+# https://bigquery-json-schema-generator.com
+
