@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# GCP project name
-PROJECT=$(gcloud config get-value project)
-SERVICE_NAME=pubsub-to-bigquery-pump
+DIR="$(dirname "$0")"
+. "${DIR}/config"
+
 
 gcloud beta run deploy $SERVICE_NAME \
 	--no-allow-unauthenticated \
-	--image gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.1.1 \
+	--image "gcr.io/cloudylabs-public/${SERVICE_NAME}:${IMAGE_VERSION}" \
 	--platform managed \
 	--timeout 15m \
-	--region us-central1 \
-	--set-env-vars "RELEASE=v0.1.1" \
+	--region $SERVICE_REGION \
+	--set-env-vars "RELEASE=v${IMAGE_VERSION}" \
 	--service-account pump-service@${PROJECT}.iam.gserviceaccount.com
 
 

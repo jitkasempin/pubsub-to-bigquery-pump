@@ -1,13 +1,21 @@
 #!/bin/bash
 
-# GCP project name
-# PROJECT=$(gcloud config get-value project)
+DIR="$(dirname "$0")"
+. "${DIR}/config"
+
 
 # modules
 go mod tidy
 go mod vendor
 
+# public image, comment this out and use the bellow submit commnad
+# to build image in your own project
 gcloud builds submit \
     --project cloudylabs-public \
-    --tag gcr.io/cloudylabs-public/pubsub-to-bigquery-pump:0.1.1 \
+    --tag "gcr.io/cloudylabs-public/${SERVICE_NAME}:${IMAGE_VERSION}" \
     .
+
+# gcloud builds submit \
+#     --project cloudylabs-public \
+#     --tag "gcr.io/${PROJECT}/${SERVICE_NAME}:${IMAGE_VERSION}" \
+#     .

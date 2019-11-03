@@ -71,15 +71,11 @@ A couple of worth to note deployment options. First, we deployed the `pubsub-to-
 
 ### Cloud Schedule
 
-With our Cloud Run service deployed, we can now configure Cloud Schedule to execute that service.
+With our Cloud Run service deployed, we can now configure individual jobs in Cloud Scheduler that will execute your Cloud Run service.
 
-> Assumptions: you BigQuery schema matches the names of JSON message fields. Column names are not case sensitive and the types conversion is best effort.
+> This service assumes that your BigQuery schema matches the names of JSON message fields. Column names are not case sensitive and the types conversion is best effort.
 
-```shell
-bin/schedule
-```
-
-The created schedule will execute every 30 min with following content
+To configure job to drain your messages accumulated in PubSub topic to BigQuery create a job configuration file with this shape (see sample in [job/sample.json](./job/sample.json)):
 
 ```json
 {
@@ -98,7 +94,7 @@ The created schedule will execute every 30 min with following content
 }
 ```
 
-You can create multiple schedules each with their own configuration:
+The above configuration defines:
 
 * `id` is the unique ID for this job. Will be used in metrics to track the counts across executions
 * `source` is the PubSub configuration
@@ -110,6 +106,17 @@ You can create multiple schedules each with their own configuration:
   * `batch_size` is the size of the insert batch, every n number of messages the service will insert batch into BigQuery. Should be lesser than the maximum size of [BigQuery batch insert limits](https://cloud.google.com/bigquery/quotas#load_jobs)
   * `ignore_unknowns` indicates whether the service should error when there are fields in your JSON message on PubSun that are not represented in BigQuery table
 * `max_duration` is the maximum amount of time the service should execute. The service will exit after the specified number of seconds whether there are more message or not. Should not be greater than the service `--timeout` or maximum Cloud Run service execution time (15 min)
+
+You can create multiple jobs each with their own schedules and configuration. To see a sample of the schedule that will execute every 30 min see [bin/schedule](./bin/schedule), then to execute it with your own job run:
+
+Note, cloud run service URLs are not predictable, you can capture your service URL using this command:
+
+```shell
+gcloud beta run services describe $SERVICE_NAME \
+    --region $SERVICE_REGION \
+    --format="value(status.domain)"
+```
+
 
 ## Metrics
 
@@ -169,7 +176,7 @@ This will mock `demo` metric messages from `3` different sources at `0.5` second
 [EVENT-MAKER] Publishing: {"source_id":"device-2","event_id":"eid-eb3ac691348f","event_ts":"2019-11-03T14:50:50.485636Z","label":"demo","mem_used":90.8284,"cpu_used":58.6633,"load_1":5.06,"load_5":11.92,"load_15":34.36,"random_metric":20.3186}
 ```
 
-### Run Cloud Scheduler
+### Execute Scheduler
 
 To execute service now you can manually trigger the created schedule. If everything goes well your BigQuery table should have some messages.
 

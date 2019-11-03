@@ -1,5 +1,5 @@
 #!/bin/bash
 
 curl -H "Content-Type: application/json" \
-    -d @./bin/job.json \
+    -d @./job/sample.json \
     -X POST http://localhost:8080/v1/pump

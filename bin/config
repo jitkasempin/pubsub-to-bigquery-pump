@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Global config
+SERVICE_NAME=pubsub-to-bigquery-pump
+SERVICE_REGION=us-central1
+SA_NAME=pump-service
+IMAGE_VERSION="0.1.5"
+
+# GCP metadata
+PROJECT=$(gcloud config get-value project)
+PROJECT_NUM=$(gcloud projects describe ${PROJECT} --format="value(projectNumber)")
+

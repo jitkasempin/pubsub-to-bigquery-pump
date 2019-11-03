@@ -1,6 +1,9 @@
 #!/bin/bash
 
+DIR="$(dirname "$0")"
+. "${DIR}/config"
+
 # accounts
-gcloud iam service-accounts create pump-service \
+gcloud iam service-accounts create ${SA_NAME} \
 	--display-name "pubsub-to-bigquery-pump service account"
 

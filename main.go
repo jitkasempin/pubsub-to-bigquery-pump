@@ -13,7 +13,7 @@ import (
 var (
 	logger    = log.New(os.Stdout, "[PUMP] ", 0)
 	port      = env.MustGetEnvVar("PORT", "8080")
-	release   = env.MustGetEnvVar("RELEASE", "v0.0.1-manual")
+	release   = env.MustGetEnvVar("RELEASE", "v0.0.1-default")
 	projectID = project.GetIDOrFail()
 )
 

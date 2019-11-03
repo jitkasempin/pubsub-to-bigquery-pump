@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	// custom metrics dimensions
 	invocationMetric = "invocation"
 	messagesMetric   = "message"
 	durationMetric   = "duration"
@@ -19,11 +20,17 @@ const (
 
 // PumpResult represents the result of pump process
 type PumpResult struct {
-	ExecutedOn   time.Time `json:"executed_on"`
-	Duration     int       `json:"duration"`
-	Release      string    `json:"release"`
-	Request      *PumpJob  `json:"request"`
-	MessageCount int       `json:"message_count"`
+	// ExecutedOn is the time when the pump job was executed
+	ExecutedOn time.Time `json:"executed_on"`
+	// Duration is the amount of seconds that the pump job took
+	Duration int `json:"duration"`
+	// Release is the version of the code that was used to
+	// execute this pump job
+	Release string `json:"release"`
+	// Request is the job configuration that was originally submitted
+	Request *PumpJob `json:"request"`
+	// MessageCount is the total message count processed by this pump job
+	MessageCount int `json:"message_count"`
 }
 
 func pump(in *PumpJob) (out *PumpResult, err error) {
@@ -42,7 +49,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 			projectID, err)
 	}
 
-	logger.Printf("creating importer client[%s.%s.%s]",
+	logger.Printf("creating importer[%s.%s.%s]",
 		projectID, in.Target.Dataset, in.Target.Table)
 	imp, err := newImportClient(ctx, in.Target)
 	if err != nil {
@@ -59,7 +66,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 	var innerError error
 	lastMessage := time.Now()
 
-	// this will cancel the sub Receive loop if max stall time has reached
+	// this will cancel the sub receive loop if max stall time has reached
 	ticker := time.NewTicker(5 * time.Second)
 	go func() {
 		for {
@@ -67,7 +74,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 			case <-ticker.C:
 				elapsed := int(time.Now().Sub(lastMessage).Seconds())
 				if elapsed > in.Source.MaxStall {
-					logger.Println("max stall time elapsed")
+					logger.Println("max stall time reached")
 					cancel()
 					ticker.Stop()
 					return
@@ -76,7 +83,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 		}
 	}()
 
-	// start pulling messages
+	// start pulling messages from subscription
 	receiveErr := sub.Receive(inCtx, func(ctx context.Context, msg *pubsub.Message) {
 
 		lastMessage = time.Now()
@@ -87,7 +94,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 		messageCounter++
 		totalCounter++
 
-		//logger.Printf("appending %d", messageCounter)
+		// append message to the importer
 		appendErr := imp.append(msg.Data)
 		if appendErr != nil {
 			logger.Printf("error on data append: %v", appendErr)
@@ -97,7 +104,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 
 		msg.Ack() //TODO: Ack after inserts?
 
-		// count
+		// check whether time to exec the batch
 		if messageCounter == in.Target.BatchSize {
 			logger.Println("batch size reached")
 			messageCounter = 0
@@ -107,10 +114,10 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 			}
 		}
 
-		// duration
+		// check if max job time has been reached
 		elapsed := int(time.Now().Sub(start).Seconds())
 		if elapsed > in.MaxDuration {
-			logger.Println("time elapsed")
+			logger.Println("max job exec time reached")
 			cancel()
 		}
 
@@ -138,26 +145,10 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 	}
 
 	// metrics
-	m, metricErr := metric.NewClient(ctx)
-	if metricErr != nil {
-		return nil, fmt.Errorf("metric client[%s]: %v",
-			projectID, metricErr)
-	}
-
-	if metricErr = m.Publish(ctx, in.ID, invocationMetric, 1); err != nil {
-		return nil, fmt.Errorf("metric record[%s][%s]: %v",
-			in.ID, invocationMetric, metricErr)
-	}
-
-	if metricErr = m.Publish(ctx, in.ID, messagesMetric, totalCounter); err != nil {
-		return nil, fmt.Errorf("metric record[%s][%s]: %v",
-			in.ID, messagesMetric, metricErr)
-	}
-
 	totalDuration := time.Now().Sub(start).Seconds()
-	if metricErr = m.Publish(ctx, in.ID, durationMetric, totalDuration); err != nil {
-		return nil, fmt.Errorf("metric record[%s][%s]: %v",
-			in.ID, durationMetric, metricErr)
+	if metricErr := submitMetrics(ctx, in.ID, totalCounter, totalDuration); metricErr != nil {
+		return nil, fmt.Errorf("metrics[%s] error: %v",
+			in.ID, metricErr)
 	}
 
 	// response
@@ -170,4 +161,25 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 	}
 
 	return r, nil
+}
+
+func submitMetrics(ctx context.Context, id string, c int, d float64) error {
+	m, err := metric.NewClient(ctx)
+	if err != nil {
+		return fmt.Errorf("metric client[%s]: %v", projectID, err)
+	}
+
+	if err = m.Publish(ctx, id, invocationMetric, 1); err != nil {
+		return fmt.Errorf("metric record[%s][%s]: %v", id, invocationMetric, err)
+	}
+
+	if err = m.Publish(ctx, id, messagesMetric, c); err != nil {
+		return fmt.Errorf("metric record[%s][%s]: %v", id, messagesMetric, err)
+	}
+
+	if err = m.Publish(ctx, id, durationMetric, d); err != nil {
+		return fmt.Errorf("metric record[%s][%s]: %v", id, durationMetric, err)
+	}
+
+	return nil
 }
