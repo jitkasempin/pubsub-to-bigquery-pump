@@ -45,7 +45,7 @@ bin/account
 Now that we have the service account created, we can assign it the necessary policies:
 
 * `run.invoker` - required to execute Cloud Run service
-* `pubsub.editor` - required to list and read from Cloud PubSub subscription
+* `pubsub.subscriber` - required to list and read from Cloud PubSub subscription
 * `bigquery.dataOwner` - required to write/read to BigQuery table
 * `logging.logWriter` - required for Stackdriver logging
 * `cloudtrace.agent` - required for Stackdriver tracing
