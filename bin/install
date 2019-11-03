@@ -85,7 +85,7 @@ gcloud beta run services add-iam-policy-binding $SERVICE_NAME \
     --role roles/run.invoker --quiet
 echo ""
 echo ""
-echo "Done"
+echo "Almost done..."
 echo ""
 
 echo "Pulling single message from ${TOPIC_NAME}-pump-sub subscription"
@@ -96,21 +96,9 @@ echo ""
 echo "Now, crewate BigQuery schema. You can use "
 echo "https://bigquery-json-schema-generator.com to convert the message JSON "
 echo "into BigQuery schema, then apply it using the bq CLI"
+echo ""
 
+echo "DONE"
+echo ""
 
-# clenup for debugging
-echo "DEBUG - Cleanup? (ctrl+c to exit or enter to cleanup)"
-read CLENUP
-gcloud pubsub subscriptions delete "${TOPIC_NAME}-pump-sub"
-
-
-# BigQuery
-# bq mk pump
-# bq mk --schema source_id:string,event_id:string,event_ts:timestamp,load_1:numeric \
-#       -t "pump.events"
-
-# https://github.com/mchmarny/pubsub-event-maker
-
-
-# https://bigquery-json-schema-generator.com
 
