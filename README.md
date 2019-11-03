@@ -73,7 +73,7 @@ A couple of worth to note deployment options. First, we deployed the `pubsub-to-
 
 With our Cloud Run service deployed, we can now configure individual jobs in Cloud Scheduler that will execute your Cloud Run service.
 
-> This service assumes that your BigQuery schema matches the names of JSON message fields. Column names are not case sensitive and the types conversion is best effort.
+> This service assumes that your BigQuery schema matches the names of JSON message fields. Column names are not case sensitive and the types conversion is best effort. You can use [this service](https://bigquery-json-schema-generator.com/) to generate BigQuery schema from the JSON in one of your PubSub messages
 
 To configure job to drain your messages accumulated in PubSub topic to BigQuery create a job configuration file with this shape (see sample in [job/sample.json](./job/sample.json)):
 
