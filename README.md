@@ -143,7 +143,7 @@ Then create a PubSub subscription named `pump-sub`
 ```shell
 gcloud pubsub subscriptions create pump-sub \
     --topic pump \
-    --ack-deadline 900 \
+    --ack-deadline 600 \
     --message-retention-duration 1d
 ```
 
