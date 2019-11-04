@@ -1,5 +1,16 @@
 #!/bin/bash
 
+curl -H "Content-type: application/x-yaml" \
+    -d @./job/sample.yaml \
+    -X POST http://localhost:8080/v1/pump/yaml | jq "."
+
+
+# curl -H "Content-Type: application/json" \
+#     -d @./job/sample.json \
+#     -X POST http://localhost:8080/v1/pump | jq "."
+
+
 curl -H "Content-Type: application/json" \
     -d @./job/sample.json \
-    -X POST http://localhost:8080/v1/pump
+    -X POST http://localhost:8080/v1/pump/json | jq "."
+

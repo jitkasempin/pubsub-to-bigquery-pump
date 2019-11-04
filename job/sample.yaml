@@ -1,0 +1,11 @@
+---
+ID: sample-import
+MaxDuration: 60
+Source:
+  MaxStall: 15
+  Subscription: pump-sub
+Target:
+  BatchSize: 1000
+  Dataset: pump
+  IgnoreUnknowns: true
+  Table: events

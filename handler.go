@@ -34,8 +34,8 @@ type PumpJob struct {
 		MaxStall int `json:"max_stall"`
 	} `json:"source"`
 	// is the BigQuery configuration
-	Target      *JobTarget `json:"target"`
-	MaxDuration int        `json:"max_duration"`
+	Target      JobTarget `json:"target"`
+	MaxDuration int       `json:"max_duration"`
 }
 
 // JobTarget represents the job target configuration
@@ -58,9 +58,16 @@ func pumpHandler(c *gin.Context) {
 
 	// get PumpJob instance from HTTP POST request
 	var req PumpJob
-	err := c.BindJSON(&req)
-	if err != nil {
-		logger.Printf("error binding request: %v", err)
+	var bindErr error
+
+	format := c.Param("format")
+	if format == "yaml" {
+		bindErr = c.BindYAML(&req)
+	} else {
+		bindErr = c.BindJSON(&req)
+	}
+	if bindErr != nil {
+		logger.Printf("error binding request: %v", bindErr)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid request format",
 			"status":  "BadRequest",

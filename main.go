@@ -34,6 +34,7 @@ func main() {
 	v1 := r.Group("/v1")
 	{
 		v1.POST("/pump", pumpHandler)
+		v1.POST("/pump/:format", pumpHandler)
 	}
 
 	// server

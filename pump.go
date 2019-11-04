@@ -51,7 +51,7 @@ func pump(in *PumpJob) (out *PumpResult, err error) {
 
 	logger.Printf("creating importer[%s.%s.%s]",
 		projectID, in.Target.Dataset, in.Target.Table)
-	imp, err := newImportClient(ctx, in.Target)
+	imp, err := newImportClient(ctx, &in.Target)
 	if err != nil {
 		return nil, fmt.Errorf("bigquery client[%s.%s]: %v",
 			in.Target.Dataset, in.Target.Table, err)
