@@ -84,6 +84,22 @@ gcloud beta run services add-iam-policy-binding $SERVICE_NAME \
     --member "serviceAccount:${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
     --role roles/run.invoker --quiet
 echo ""
+
+echo "Creating schedule for ${TOPIC_NAME}-pump-sub"
+echo "How often would you like to execute (e.g. 'every 30 mins')"
+read $SCHEDULE_FREQ
+
+SERVICE_URL=$(gcloud beta run services describe ${SERVICE_NAME} \
+    --region ${SERVICE_REGION} --format="value(status.domain)")
+
+gcloud beta scheduler jobs create http "${TOPIC_NAME}-pump-schedule" \
+    --http-method POST \
+    --schedule $SCHEDULE_FREQ \
+    --uri "${SERVICE_URL}/v1/pump" \
+    --message-body '{"id": "${TOPIC_NAME}-pump","source": {"subscription": "${TOPIC_NAME}-pump-sub","max_stall": 15},"target": {"dataset": "pump","table": "events","batch_size": 1000,"ignore_unknowns": true},"max_duration": 60}' \
+    --oidc-service-account-email "${SERVICE_ACCOUNT}@${PROJECT}.iam.gserviceaccount.com" \
+    --oidc-token-audience "${SERVICE_URL}/v1/pump"
+
 echo ""
 echo "Almost done..."
 echo ""
@@ -93,6 +109,7 @@ echo "(message won't be acknowladged, subscription will pull it again)"
 gcloud pubsub subscriptions pull "${TOPIC_NAME}-pump-sub" \
     --format="value(DATA)"
 echo ""
+
 echo "Now, crewate BigQuery schema. You can use "
 echo "https://bigquery-json-schema-generator.com to convert the message JSON "
 echo "into BigQuery schema, then apply it using the bq CLI"

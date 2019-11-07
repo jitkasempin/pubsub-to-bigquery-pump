@@ -2,6 +2,8 @@
 
 Load JSON-formatted messages from PubSub topic into BigQuery table. By combining thus [Cloud Run](https://cloud.google.com/run/) service and Cloud Scheduler configure multiple "import job" at specific interval.
 
+![](./image/overview.png)
+
 ## Why Custom Service
 
 Google Cloud has an easy approach to draining your PubSub messages into BigQuery. Using provided template you create a job that will consistently and reliably stream your messages into BigQuery.
