@@ -1,4 +1,4 @@
-# pubsub-to-bigquery-pump
+# Drain PubSub topic messages to BigQuery table
 
 Load JSON-formatted messages from PubSub topic into BigQuery table. By combining thus [Cloud Run](https://cloud.google.com/run/) service and Cloud Scheduler configure multiple "import job" at specific interval.
 
